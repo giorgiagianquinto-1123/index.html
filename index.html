@@ -24,6 +24,7 @@
         .info-box { background: #f8f9fa; padding: 15px; border-radius: 12px; margin-top: 15px; text-align: left; font-size: 0.85rem; line-height: 1.6; color: #2c3e50; }
         .hidden { display: none; }
         .licenza-label { color: #e67e22; font-weight: bold; }
+        .preview-days { font-size: 0.8rem; color: #3498db; font-style: italic; margin-top: 5px; text-align: left; display: block; }
     </style>
 </head>
 <body>
@@ -33,9 +34,10 @@
         <label>Paga Giornaliera (€)</label>
         <input type="number" id="pagaGiorno" placeholder="Es: 120">
         <label>Inizio Periodo</label>
-        <input type="datetime-local" id="dataInizio">
+        <input type="datetime-local" id="dataInizio" oninput="updateSetupPreview()">
         <label>Fine Periodo</label>
-        <input type="datetime-local" id="dataFine">
+        <input type="datetime-local" id="dataFine" oninput="updateSetupPreview()">
+        <span id="setupPreview" class="preview-days"></span>
         <button onclick="startCounter()">Avvia Conteggio</button>
     </div>
 
@@ -54,7 +56,8 @@
 
         <div id="editZone" class="hidden">
             <label>Nuova Data di Fine</label>
-            <input type="datetime-local" id="nuovaFine">
+            <input type="datetime-local" id="nuovaFine" oninput="updateEditPreview()">
+            <span id="editPreview" class="preview-days"></span>
             <button onclick="updateEndDate()">Conferma Modifica</button>
         </div>
         
@@ -74,6 +77,32 @@
             }
         };
 
+        // Funzione per calcolare i giorni interi
+        function calculateFullDays(start, end) {
+            const d1 = new Date(start);
+            const d2 = new Date(end);
+            if (isNaN(d1) || isNaN(d2)) return null;
+            
+            // Calcoliamo la differenza in millisecondi e dividiamo per i ms in un giorno
+            const diffMs = d2 - d1;
+            const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+            return diffDays > 0 ? diffDays : 0;
+        }
+
+        function updateSetupPreview() {
+            const start = document.getElementById('dataInizio').value;
+            const end = document.getElementById('dataFine').value;
+            const days = calculateFullDays(start, end);
+            document.getElementById('setupPreview').innerText = days !== null ? `Numero giorni: ${days}` : "";
+        }
+
+        function updateEditPreview() {
+            const start = document.getElementById('dataInizio').value;
+            const end = document.getElementById('nuovaFine').value;
+            const days = calculateFullDays(start, end);
+            document.getElementById('editPreview').innerText = days !== null ? `Nuovo numero giorni: ${days}` : "";
+        }
+
         function getProgressColor(percent) {
             const r = percent < 50 ? 231 : Math.floor(231 - (percent - 50) * 4.62);
             const g = percent < 50 ? Math.floor(percent * 4.62) : 231;
@@ -83,14 +112,10 @@
         function contaDomeniche(inizio, fine) {
             let conteggio = 0;
             let dataCorrente = new Date(inizio);
-            // Portiamo la data all'inizio del giorno per il confronto
             dataCorrente.setHours(0, 0, 0, 0);
             let dataFineConf = new Date(fine);
-            
             while (dataCorrente <= dataFineConf) {
-                if (dataCorrente.getDay() === 0) { // 0 è Domenica
-                    conteggio++;
-                }
+                if (dataCorrente.getDay() === 0) conteggio++;
                 dataCorrente.setDate(dataCorrente.getDate() + 1);
             }
             return conteggio;
@@ -111,19 +136,19 @@
         function renderUI(pagaG, inizio, fine) {
             if(interval) clearInterval(interval);
             const diffTempoTotale = fine - inizio;
-            const diffGiorni = diffTempoTotale / (1000 * 60 * 60 * 24);
-            const pagaTotale = pagaG * diffGiorni;
-            const pagaAlSecondo = pagaTotale / (diffTempoTotale / 1000);
+            const diffGiorniInteri = calculateFullDays(inizio, fine);
             
+            // Il calcolo economico rimane preciso al secondo basandosi sui giorni inseriti
+            const pagaTotale = pagaG * diffGiorniInteri;
+            const pagaAlSecondo = pagaTotale / (diffTempoTotale / 1000);
             const numDomeniche = contaDomeniche(inizio, fine);
 
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('counter').classList.remove('hidden');
-            
-            // Mostra la data di fine
-            document.getElementById('endDateDisplay').innerText = "Fine impostata: " + fine.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            document.getElementById('endDateDisplay').innerText = "Fine impostata: " + fine.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
             document.getElementById('summary').innerHTML = `
+                <b>Numero giorni:</b> ${diffGiorniInteri}<br>
                 <b>Paga Totale prevista:</b> €${pagaTotale.toFixed(2)}<br>
                 <span class="licenza-label">Licenza maturata:</span> ${numDomeniche} ${numDomeniche === 1 ? 'domenica' : 'domeniche'}
             `;
@@ -132,7 +157,6 @@
                 const adesso = new Date();
                 let secondiTrascorsi = (adesso - inizio) / 1000;
                 let durataTotaleSecondi = diffTempoTotale / 1000;
-
                 if (secondiTrascorsi < 0) secondiTrascorsi = 0;
                 if (adesso > fine) secondiTrascorsi = durataTotaleSecondi;
 
@@ -141,21 +165,22 @@
 
                 const percentuale = (secondiTrascorsi / durataTotaleSecondi) * 100;
                 const color = getProgressColor(percentuale);
-                
                 const bar = document.getElementById('progressBar');
                 bar.style.width = percentuale.toFixed(2) + "%";
                 bar.style.backgroundColor = color;
-                
                 const txt = document.getElementById('percentValue');
                 txt.innerText = percentuale.toFixed(1) + "%";
                 txt.style.color = color;
-
             }, 1000);
         }
 
         function showEdit() {
             document.getElementById('editZone').classList.toggle('hidden');
             document.getElementById('toggleEdit').innerText = document.getElementById('editZone').classList.contains('hidden') ? "Modifica Data Fine" : "Annulla";
+            if (!document.getElementById('editZone').classList.contains('hidden')) {
+                document.getElementById('nuovaFine').value = document.getElementById('dataFine').value;
+                updateEditPreview();
+            }
         }
 
         function updateEndDate() {
@@ -171,3 +196,4 @@
     </script>
 </body>
 </html>
+
