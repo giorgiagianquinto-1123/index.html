@@ -77,13 +77,10 @@
             }
         };
 
-        // Funzione per calcolare i giorni interi
         function calculateFullDays(start, end) {
             const d1 = new Date(start);
             const d2 = new Date(end);
             if (isNaN(d1) || isNaN(d2)) return null;
-            
-            // Calcoliamo la differenza in millisecondi e dividiamo per i ms in un giorno
             const diffMs = d2 - d1;
             const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
             return diffDays > 0 ? diffDays : 0;
@@ -123,13 +120,17 @@
 
         function startCounter() {
             const pagaG = parseFloat(document.getElementById('pagaGiorno').value);
-            const inizio = new Date(document.getElementById('dataInizio').value);
-            const fine = new Date(document.getElementById('dataFine').value);
-            if (!pagaG || isNaN(inizio) || isNaN(fine)) return;
+            const inizioVal = document.getElementById('dataInizio').value;
+            const fineVal = document.getElementById('dataFine').value;
+
+            if (!pagaG || !inizioVal || !fineVal) return;
+
+            const inizio = new Date(inizioVal);
+            const fine = new Date(fineVal);
 
             localStorage.setItem('pagaGiorno', pagaG);
-            localStorage.setItem('dataInizio', document.getElementById('dataInizio').value);
-            localStorage.setItem('dataFine', document.getElementById('dataFine').value);
+            localStorage.setItem('dataInizio', inizioVal);
+            localStorage.setItem('dataFine', fineVal);
             renderUI(pagaG, inizio, fine);
         }
 
@@ -137,8 +138,6 @@
             if(interval) clearInterval(interval);
             const diffTempoTotale = fine - inizio;
             const diffGiorniInteri = calculateFullDays(inizio, fine);
-            
-            // Il calcolo economico rimane preciso al secondo basandosi sui giorni inseriti
             const pagaTotale = pagaG * diffGiorniInteri;
             const pagaAlSecondo = pagaTotale / (diffTempoTotale / 1000);
             const numDomeniche = contaDomeniche(inizio, fine);
@@ -147,30 +146,47 @@
             document.getElementById('counter').classList.remove('hidden');
             document.getElementById('endDateDisplay').innerText = "Fine impostata: " + fine.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
-            document.getElementById('summary').innerHTML = `
-                <b>Numero giorni:</b> ${diffGiorniInteri}<br>
-                <b>Paga Totale prevista:</b> €${pagaTotale.toFixed(2)}<br>
-                <span class="licenza-label">Licenza maturata:</span> ${numDomeniche} ${numDomeniche === 1 ? 'domenica' : 'domeniche'}
-            `;
-
             interval = setInterval(() => {
                 const adesso = new Date();
-                let secondiTrascorsi = (adesso - inizio) / 1000;
-                let durataTotaleSecondi = diffTempoTotale / 1000;
-                if (secondiTrascorsi < 0) secondiTrascorsi = 0;
-                if (adesso > fine) secondiTrascorsi = durataTotaleSecondi;
+                
+                // Calcolo millisecondi trascorsi e mancanti
+                let msTrascorsi = adesso - inizio;
+                let msMancanti = fine - adesso;
 
+                if (msTrascorsi < 0) msTrascorsi = 0;
+                if (msMancanti < 0) msMancanti = 0;
+                if (adesso > fine) msTrascorsi = diffTempoTotale;
+
+                // Calcolo Giorni (Interi)
+                const giorniTrascorsi = Math.floor(msTrascorsi / (1000 * 60 * 60 * 24));
+                const giorniMancanti = Math.ceil(msMancanti / (1000 * 60 * 60 * 24));
+
+                // Calcolo Guadagno
+                const secondiTrascorsi = msTrascorsi / 1000;
                 const guadagnoAttuale = secondiTrascorsi * pagaAlSecondo;
+                
                 document.getElementById('display').innerText = "€ " + guadagnoAttuale.toLocaleString('it-IT', {minimumFractionDigits: 4});
 
-                const percentuale = (secondiTrascorsi / durataTotaleSecondi) * 100;
+                // Calcolo Percentuale e Colore
+                const percentuale = (msTrascorsi / diffTempoTotale) * 100;
                 const color = getProgressColor(percentuale);
+                
                 const bar = document.getElementById('progressBar');
                 bar.style.width = percentuale.toFixed(2) + "%";
                 bar.style.backgroundColor = color;
+                
                 const txt = document.getElementById('percentValue');
                 txt.innerText = percentuale.toFixed(1) + "%";
                 txt.style.color = color;
+
+                // Aggiornamento Box Info
+                document.getElementById('summary').innerHTML = `
+                    <b>Numero giorni totali:</b> ${diffGiorniInteri}<br>
+                    <b>Giorni trascorsi:</b> ${giorniTrascorsi}<br>
+                    <b>Giorni mancanti:</b> ${giorniMancanti}<br>
+                    <b>Paga Totale prevista:</b> €${pagaTotale.toFixed(2)}<br>
+                    <span class="licenza-label">Licenza maturata:</span> ${numDomeniche} ${numDomeniche === 1 ? 'domenica' : 'domeniche'}
+                `;
             }, 1000);
         }
 
@@ -196,4 +212,3 @@
     </script>
 </body>
 </html>
-
