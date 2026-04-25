@@ -7,12 +7,14 @@
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #2e7d32; color: white; transition: 0.5s; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
         .box { background: rgba(255,255,255,0.2); padding: 30px; border-radius: 20px; backdrop-filter: blur(5px); width: 90%; max-width: 400px; border: 1px solid rgba(255,255,255,0.3); }
-        h1 { font-size: 1.5rem; }
+        h1 { font-size: 1.5rem; margin-bottom: 20px; }
         .num { font-size: 3rem; font-weight: bold; margin: 20px 0; }
-        input { padding: 12px; border-radius: 8px; border: none; width: 70%; font-size: 1.2rem; margin: 10px 0; text-align: center; }
+        input { padding: 12px; border-radius: 8px; border: none; width: 70%; font-size: 1.2rem; margin: 10px 0; text-align: center; outline: none; }
         button { padding: 12px 25px; border-radius: 8px; border: none; background: white; color: #333; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .hidden { display: none; }
-        #messaggio { font-size: 1.4rem; font-weight: bold; margin-top: 15px; min-height: 1.5em; }
+        #messaggio { font-size: 1.2rem; font-weight: bold; margin-top: 15px; min-height: 3.5em; line-height: 1.4; display: flex; align-items: center; justify-content: center; }
+        .paga { color: #ffeb3b; font-size: 2rem; display: block; animation: pulse 0.5s infinite; }
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
     </style>
 </head>
 <body>
@@ -44,16 +46,12 @@
     function avvia() {
         min = parseInt(document.getElementById('m1').value);
         max = parseInt(document.getElementById('m2').value);
-
         if (isNaN(min) || isNaN(max) || (max - min) < 2) {
             alert("Intervallo non valido!");
             return;
         }
-
-        // Numero segreto (mai gli estremi)
         segreto = Math.floor(Math.random() * (max - min - 1)) + (min + 1);
         rangeIniziale = max - min;
-
         document.getElementById('v1').innerText = min;
         document.getElementById('v2').innerText = max;
         document.getElementById('setup').classList.add('hidden');
@@ -66,28 +64,42 @@
         let msg = document.getElementById('messaggio');
 
         if (isNaN(g) || g <= min || g >= max) {
-            msg.innerText = "Numero non valido!";
+            msg.innerText = "Scegli un numero tra quelli indicati!";
             return;
         }
 
         if (g === segreto) {
-            msg.innerHTML = "<span style='color:#ffeb3b; font-size:2rem;'>PAGA, CIUCCCC! 🐧☕️</span>";
+            msg.innerHTML = "<span class='paga'>PAGA, CIUCCCC! 🐧☕️</span>";
             document.body.style.backgroundColor = "#b71c1c";
             document.getElementById('reset').classList.remove('hidden');
             campo.disabled = true;
         } else {
             let txt = "Salvo!";
-            if (g % 10 === 0) txt = "Lo 0 non paga mai! 😎";
+            let rangeAttuale = max - min;
+
+            // 1. Controllo Tentato Infame (Range <= 10)
+            if (rangeAttuale <= 10 && (g === max - 2 || g === min + 2)) {
+                txt = "C’hai provato a fare l’infame, mannagg a te! 🤘🏼";
+            } 
+            // 2. Controllo Zeri (se non è già un tentato infame)
+            else if (g % 100 === 0) {
+                txt = "Lo 0 non paga mai... ma tu hai voluto esagerare, codardo!";
+            } else if (g % 10 === 0) {
+                txt = "Lo 0 non paga mai! 😎";
+            }
             
+            // Aggiornamento range
             if (g < segreto) min = g; else max = g;
             
-            if (max - min === 2) txt = "⚠️ INFAME! ⚠️";
+            // 3. Controllo Infame Reale (Incastro riuscito)
+            if (max - min === 2) {
+                txt = "⚠️ INFAME! ⚠️";
+            }
 
             msg.innerText = txt;
             document.getElementById('v1').innerText = min;
             document.getElementById('v2').innerText = max;
             
-            // Cambio colore dinamico
             let tensione = 1 - ((max - min) / rangeIniziale);
             let hue = Math.floor(120 - (tensione * 120));
             document.body.style.backgroundColor = "hsl(" + hue + ", 60%, 40%)";
