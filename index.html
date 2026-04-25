@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gioco del Caffè - Pro Edition</title>
+    <title>Chi sarà il 🐧?</title>
     <style>
         :root { --bg-color: #2e7d32; }
         body {
@@ -29,10 +29,11 @@
             max-width: 450px;
             border: 1px solid rgba(255,255,255,0.3);
         }
+        h1 { font-size: 1.8rem; margin-bottom: 1.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
         .range-display {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             font-weight: 800;
-            margin: 1.5rem 0;
+            margin: 1rem 0;
         }
         input {
             padding: 12px;
@@ -42,6 +43,7 @@
             font-size: 1.2rem;
             margin-bottom: 1rem;
             text-align: center;
+            outline: none;
         }
         button {
             padding: 12px 25px;
@@ -52,7 +54,9 @@
             cursor: pointer;
             font-weight: bold;
             text-transform: uppercase;
+            transition: transform 0.2s;
         }
+        button:hover { transform: scale(1.05); }
         .hidden { display: none; }
         #message {
             margin-top: 1rem;
@@ -61,7 +65,7 @@
             min-height: 1.6em;
             text-transform: uppercase;
         }
-        .paga { color: #ffeb3b; font-size: 2.5rem; animation: shake 0.3s infinite; display:block; }
+        .paga { color: #ffeb3b; font-size: 2.2rem; animation: shake 0.3s infinite; display:block; }
         @keyframes shake {
             0% { transform: translate(1px, 1px); }
             50% { transform: translate(-2px, -1px); }
@@ -72,10 +76,10 @@
 <body>
 
 <div class="container">
-    <h1>☕ Coffee Game</h1>
+    <h1>Chi sarà il 🐧 di giornata?☕️</h1>
 
     <div id="setup">
-        <p>Imposta l'intervallo:</p>
+        <p>Imposta l'intervallo iniziale:</p>
         <input type="number" id="minInput" value="1">
         <input type="number" id="maxInput" value="1000">
         <br>
@@ -83,11 +87,10 @@
     </div>
 
     <div id="game" class="hidden">
-        <p>Scegli tra (estremi esclusi):</p>
         <div class="range-display">
-            <span id="currentMin"></span> <small>...</small <span id="currentMax"></span>
+            <span id="currentMin"></span> - <span id="currentMax"></span>
         </div>
-        <input type="number" id="guessInput" placeholder="Tocca a te">
+        <input type="number" id="guessInput" placeholder="Inserisci numero">
         <br>
         <button onclick="makeGuess()">Conferma</button>
         <p id="message"></p>
@@ -103,11 +106,11 @@
         max = parseInt(document.getElementById('maxInput').value);
 
         if (isNaN(min) || isNaN(max) || (max - min) < 2) {
-            alert("Intervallo troppo piccolo! Deve esserci almeno un numero nel mezzo.");
+            alert("Intervallo non valido! Inserisci numeri più distanti.");
             return;
         }
 
-        // Il target NON può essere né min né max
+        // Il numero vincente non può essere un estremo
         targetNumber = Math.floor(Math.random() * (max - min - 1)) + (min + 1);
         initialRange = max - min;
 
@@ -121,14 +124,13 @@
         const guess = parseInt(input.value);
         const msg = document.getElementById('message');
 
-        // Controllo validità (non si possono scegliere gli estremi)
         if (isNaN(guess) || guess <= min || guess >= max) {
             msg.innerText = `Scegli tra ${min+1} e ${max-1}!`;
             return;
         }
 
         if (guess === targetNumber) {
-            msg.innerHTML = "<span class='paga'>Paga, CIUCCCC! ☕</span>";
+            msg.innerHTML = "<span class='paga'>Paga, CIUCCCC! 🐧☕️</span>";
             document.body.style.backgroundColor = "#b71c1c";
             document.getElementById('resetBtn').classList.remove('hidden');
             input.disabled = true;
@@ -140,14 +142,14 @@
                 specialMsg = "Lo 0 non paga mai! 😎";
             }
 
-            // Aggiorna intervallo
+            // Restringimento intervallo (logica richiesta)
             if (guess < targetNumber) {
                 min = guess;
             } else {
                 max = guess;
             }
 
-            // Regola dell'INFAME (se resta solo un numero possibile tra min e max)
+            // Regola dell'INFAME
             if (max - min === 2) {
                 specialMsg = "⚠️ INFAME! ⚠️";
             }
