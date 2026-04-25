@@ -5,178 +5,97 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chi sarà il 🐧?</title>
     <style>
-        :root { --bg-color: #2e7d32; }
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: var(--bg-color);
-            transition: background-color 0.5s ease;
-            color: white;
-            overflow: hidden;
-        }
-        .container {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-            text-align: center;
-            width: 90%;
-            max-width: 450px;
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-        h1 { font-size: 1.8rem; margin-bottom: 1.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
-        .range-display {
-            font-size: 2.8rem;
-            font-weight: 800;
-            margin: 1rem 0;
-        }
-        input {
-            padding: 12px;
-            width: 80%;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-            text-align: center;
-            outline: none;
-        }
-        button {
-            padding: 12px 25px;
-            background-color: white;
-            color: #333;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            text-transform: uppercase;
-            transition: transform 0.2s;
-        }
-        button:hover { transform: scale(1.05); }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #2e7d32; color: white; transition: 0.5s; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .box { background: rgba(255,255,255,0.2); padding: 30px; border-radius: 20px; backdrop-filter: blur(5px); width: 90%; max-width: 400px; border: 1px solid rgba(255,255,255,0.3); }
+        h1 { font-size: 1.5rem; }
+        .num { font-size: 3rem; font-weight: bold; margin: 20px 0; }
+        input { padding: 12px; border-radius: 8px; border: none; width: 70%; font-size: 1.2rem; margin: 10px 0; text-align: center; }
+        button { padding: 12px 25px; border-radius: 8px; border: none; background: white; color: #333; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .hidden { display: none; }
-        #message {
-            margin-top: 1rem;
-            font-size: 1.4rem;
-            font-weight: bold;
-            min-height: 1.6em;
-            text-transform: uppercase;
-        }
-        .paga { color: #ffeb3b; font-size: 2.2rem; animation: shake 0.3s infinite; display:block; }
-        @keyframes shake {
-            0% { transform: translate(1px, 1px); }
-            50% { transform: translate(-2px, -1px); }
-            100% { transform: translate(1px, 1px); }
-        }
+        #messaggio { font-size: 1.4rem; font-weight: bold; margin-top: 15px; min-height: 1.5em; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Chi sarà il 🐧 di giornata?☕️</h1>
+<div class="box">
+    <h1>Chi sarà il 🐧 di giornata? ☕️</h1>
 
     <div id="setup">
-        <p>Imposta l'intervallo iniziale:</p>
-        <input type="number" id="minInput" value="1">
-        <input type="number" id="maxInput" value="1000">
+        <p>Inserisci intervallo:</p>
+        <input type="number" id="m1" value="1">
+        <input type="number" id="m2" value="1000">
         <br>
-        <button onclick="startGame()">Inizia Sfida</button>
+        <button onclick="avvia()">Inizia Sfida</button>
     </div>
 
     <div id="game" class="hidden">
-        <div class="range-display">
-            <span id="currentMin"></span> - <span id="currentMax"></span>
-        </div>
-        <input type="number" id="guessInput" placeholder="Inserisci numero">
+        <div class="num"><span id="v1"></span> - <span id="v2"></span></div>
+        <input type="number" id="scelta" placeholder="Tocca a te">
         <br>
-        <button onclick="makeGuess()">Conferma</button>
-        <p id="message"></p>
-        <button id="resetBtn" class="hidden" onclick="location.reload()">Ricomincia</button>
+        <button onclick="gioca()">Conferma</button>
+        <div id="messaggio"></div>
+        <button id="reset" class="hidden" onclick="location.reload()" style="margin-top:20px">Nuova Partita</button>
     </div>
 </div>
 
 <script>
-    let targetNumber, min, max, initialRange;
+    let segreto, min, max, rangeIniziale;
 
-    function startGame() {
-        min = parseInt(document.getElementById('minInput').value);
-        max = parseInt(document.getElementById('maxInput').value);
+    function avvia() {
+        min = parseInt(document.getElementById('m1').value);
+        max = parseInt(document.getElementById('m2').value);
 
         if (isNaN(min) || isNaN(max) || (max - min) < 2) {
-            alert("Intervallo non valido! Inserisci numeri più distanti.");
+            alert("Intervallo non valido!");
             return;
         }
 
-        // Il numero vincente non può essere un estremo
-        targetNumber = Math.floor(Math.random() * (max - min - 1)) + (min + 1);
-        initialRange = max - min;
+        // Numero segreto (mai gli estremi)
+        segreto = Math.floor(Math.random() * (max - min - 1)) + (min + 1);
+        rangeIniziale = max - min;
 
-        updateUI();
+        document.getElementById('v1').innerText = min;
+        document.getElementById('v2').innerText = max;
         document.getElementById('setup').classList.add('hidden');
         document.getElementById('game').classList.remove('hidden');
     }
 
-    function makeGuess() {
-        const input = document.getElementById('guessInput');
-        const guess = parseInt(input.value);
-        const msg = document.getElementById('message');
+    function gioca() {
+        let campo = document.getElementById('scelta');
+        let g = parseInt(campo.value);
+        let msg = document.getElementById('messaggio');
 
-        if (isNaN(guess) || guess <= min || guess >= max) {
-            msg.innerText = `Scegli tra ${min+1} e ${max-1}!`;
+        if (isNaN(g) || g <= min || g >= max) {
+            msg.innerText = "Numero non valido!";
             return;
         }
 
-        if (guess === targetNumber) {
-            msg.innerHTML = "<span class='paga'>Paga, CIUCCCC! 🐧☕️</span>";
+        if (g === segreto) {
+            msg.innerHTML = "<span style='color:#ffeb3b; font-size:2rem;'>PAGA, CIUCCCC! 🐧☕️</span>";
             document.body.style.backgroundColor = "#b71c1c";
-            document.getElementById('resetBtn').classList.remove('hidden');
-            input.disabled = true;
+            document.getElementById('reset').classList.remove('hidden');
+            campo.disabled = true;
         } else {
-            let specialMsg = "";
+            let txt = "Salvo!";
+            if (g % 10 === 0) txt = "Lo 0 non paga mai! 😎";
             
-            // Regola dello 0 finale
-            if (guess % 10 === 0) {
-                specialMsg = "Lo 0 non paga mai! 😎";
-            }
+            if (g < segreto) min = g; else max = g;
+            
+            if (max - min === 2) txt = "⚠️ INFAME! ⚠️";
 
-            // Restringimento intervallo (logica richiesta)
-            if (guess < targetNumber) {
-                min = guess;
-            } else {
-                max = guess;
-            }
-
-            // Regola dell'INFAME
-            if (max - min === 2) {
-                specialMsg = "⚠️ INFAME! ⚠️";
-            }
-
-            msg.innerText = specialMsg || "Salvo!";
-            updateUI();
-            updateColor();
-            input.value = "";
-            input.focus();
+            msg.innerText = txt;
+            document.getElementById('v1').innerText = min;
+            document.getElementById('v2').innerText = max;
+            
+            // Cambio colore dinamico
+            let tensione = 1 - ((max - min) / rangeIniziale);
+            let hue = Math.floor(120 - (tensione * 120));
+            document.body.style.backgroundColor = "hsl(" + hue + ", 60%, 40%)";
+            
+            campo.value = "";
+            campo.focus();
         }
     }
-
-    function updateUI() {
-        document.getElementById('currentMin').innerText = min;
-        document.getElementById('currentMax').innerText = max;
-    }
-
-    function updateColor() {
-        const currentRange = max - min;
-        const tension = 1 - (currentRange / initialRange);
-        const hue = Math.floor(120 - (tension * 120));
-        document.body.style.backgroundColor = `hsl(${hue}, 60%, 40%)`;
-    }
-
-    document.getElementById('guessInput').addEventListener("keyup", e => {
-        if (e.key === "Enter") makeGuess();
-    });
 </script>
 
 </body>
